@@ -2,11 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=200,height=400,initial-scale=0.5" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Canvas — Triangles</title>
     <style>
-        html,body { height:10%; margin:0; }
-        canvas { display:block; width:10%; height:10%; background:#fff; }
+        html,body { height:100%; margin:0; }
+        /* let JS control exact canvas size; ensure it doesn't overflow */
+        canvas { display:block; width:100%; height:auto; max-width:100%; background:#fff; }
+        /* small tweaks for very narrow screens */
+        @media (max-width:420px) {
+            html,body { font-size:14px; }
+        }
     </style>
 </head>
 <body>
@@ -15,47 +20,55 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const arr = new Array(11).fill(0);
+        let cssWidth = 0, cssHeight = 0;
 
         function resize() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            canvas.width = Math.round(rect.width * dpr);
-            canvas.height = Math.round(rect.height * dpr);
+            cssWidth = rect.width;
+            cssHeight = rect.height;
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             draw();
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
+            const W = cssWidth;
+            const H = cssHeight;
+
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(40, canvas.height - 40);
-            ctx.lineTo(canvas.width - 40, canvas.height - 40);
+            ctx.moveTo(40, H - 40);
+            ctx.lineTo(W - 40, H - 40);
             ctx.stroke();
-            
+
             ctx.beginPath();
             ctx.moveTo(40, 40);
-            ctx.lineTo(40, canvas.height - 40);
+            ctx.lineTo(40, H - 40);
             ctx.stroke();
-            
-            const barWidth = (canvas.width - 80) / arr.length;
+
+            const barWidth = Math.max(6, (W - 80) / arr.length);
             const maxVal = Math.max(...arr.filter(v => v !== undefined)) || 1;
-            const scale = (canvas.height - 80) / maxVal;
-            
+            const scale = (H - 80) / maxVal;
+
+            const fontSize = Math.max(10, Math.round(barWidth * 0.35));
+            ctx.font = fontSize + 'px Arial';
+            ctx.textAlign = 'center';
+
             ctx.fillStyle = '#3498db';
             for (let i = 0; i < arr.length; i++) {
                 if (arr[i] !== undefined) {
                     const x = 40 + i * barWidth;
                     const barHeight = arr[i] * scale;
-                    const y = canvas.height - 40 - barHeight;
+                    const y = H - 40 - barHeight;
                     ctx.fillRect(x, y, barWidth * 0.8, barHeight);
-                    
+
                     ctx.fillStyle = '#000';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText("[" + (i+2) + "]  " +arr[i], x + barWidth * 0.4, canvas.height - 20);
+                    ctx.fillText("[" + (i+2) + "]  " + arr[i], x + barWidth * 0.4, H - 20);
                     ctx.fillStyle = '#3498db';
                 }
             }
@@ -63,8 +76,9 @@
         }
 
         function initCanvasSize() {
-            canvas.style.width = '100vw';
-            canvas.style.height = '100vh';
+            // prefer window inner dimensions so mobile browser UI fits better
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
             resize();
         }
 
@@ -72,11 +86,15 @@
             const die1 = Math.floor(Math.random() * 6) + 1;
             const die2 = Math.floor(Math.random() * 6) + 1;
             const sum = die1 + die2;
-            arr[sum - 2] = arr[sum - 2] +1;
+            arr[sum - 2] = arr[sum - 2] + 1;
             draw();
         }
 
-        window.addEventListener('resize', resize);
+        window.addEventListener('resize', () => {
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            resize();
+        });
         initCanvasSize();
         setInterval(rollDice, 200);
     </script>
